@@ -25,19 +25,20 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Font settings
-        const fontSize = 20;
-        const charSpacing = 5; // Space between characters
-        ctx.font = `${fontSize}px Arial`;
-        ctx.fillStyle = "black";
-
         // Load text file
         fetch('./text/mb.txt')
             .then(response => response.text())
             .then(text => {
-                // Text analysis
-                const charCount = text.replace(/\n/g, '').length;
+                // Process text: replace newlines with spaces, add black dots for blank lines
+                const paragraphs = text.split(/\n\n/); // Split into paragraphs by blank lines
+                const processedText = paragraphs.map(p => p.replace(/\n/g, ' ').trim()).join(' \u2022 '); // Replace line breaks with spaces and join with a dot
+
+                // Dynamic font size to fit the text in a square layout
+                const charCount = processedText.length;
                 const gridSize = Math.ceil(Math.sqrt(charCount));
+                const fontSize = Math.min(canvas.width, canvas.height) / gridSize;
+
+                const charSpacing = fontSize * 0.1; // Space between characters
                 const canvasSize = gridSize * (fontSize + charSpacing);
 
                 // Initialize infinite canvas size
@@ -52,15 +53,8 @@
                 let x = 0;
                 let y = fontSize;
 
-                for (let char of text) {
-                    if (char === "\n") {
-                        // Replace newlines with a black dot
-                        infiniteCtx.beginPath();
-                        infiniteCtx.arc(x + fontSize / 2, y - fontSize / 2, fontSize / 4, 0, 2 * Math.PI);
-                        infiniteCtx.fill();
-                    } else {
-                        infiniteCtx.fillText(char, x, y);
-                    }
+                for (let char of processedText) {
+                    infiniteCtx.fillText(char, x, y);
 
                     x += fontSize + charSpacing;
                     if (x + fontSize > infiniteCanvas.width) {
