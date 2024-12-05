@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Grid Canvas</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="textCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("textCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        // Adjust canvas size to window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Font settings
+        const fontSize = 20;
+        const charSpacing = 5; // Space between characters
+        ctx.font = `${fontSize}px Arial`;
+        ctx.fillStyle = "black";
+
+        // Load text file
+        fetch('mb.txt')
+            .then(response => response.text())
+            .then(text => {
+                // Text analysis
+                const charCount = text.replace(/\n/g, '').length;
+                const gridSize = Math.ceil(Math.sqrt(charCount));
+                const canvasSize = gridSize * (fontSize + charSpacing);
+
+                // Initialize infinite canvas size
+                const infiniteCanvas = document.createElement("canvas");
+                infiniteCanvas.width = canvasSize;
+                infiniteCanvas.height = canvasSize;
+                const infiniteCtx = infiniteCanvas.getContext("2d");
+                infiniteCtx.font = `${fontSize}px Arial`;
+                infiniteCtx.fillStyle = "black";
+
+                // Render characters to the grid
+                let x = 0;
+                let y = fontSize;
+
+                for (let char of text) {
+                    if (char === "\n") {
+                        // Replace newlines with a black dot
+                        infiniteCtx.beginPath();
+                        infiniteCtx.arc(x + fontSize / 2, y - fontSize / 2, fontSize / 4, 0, 2 * Math.PI);
+                        infiniteCtx.fill();
+                    } else {
+                        infiniteCtx.fillText(char, x, y);
+                    }
+
+                    x += fontSize + charSpacing;
+                    if (x + fontSize > infiniteCanvas.width) {
+                        x = 0;
+                        y += fontSize + charSpacing;
+                    }
+                }
+
+                // Panning logic
+                let offsetX = 0, offsetY = 0;
+                let isPanning = false;
+                let startX, startY;
+
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(infiniteCanvas, offsetX, offsetY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+                }
+
+                canvas.addEventListener("mousedown", (e) => {
+                    isPanning = true;
+                    startX = e.clientX - offsetX;
+                    startY = e.clientY - offsetY;
+                });
+
+                canvas.addEventListener("mouseup", () => {
+                    isPanning = false;
+                });
+
+                canvas.addEventListener("mousemove", (e) => {
+                    if (!isPanning) return;
+                    offsetX = e.clientX - startX;
+                    offsetY = e.clientY - startY;
+                    draw();
+                });
+
+                canvas.addEventListener("wheel", (e) => {
+                    e.preventDefault();
+                    const zoomFactor = 1.1;
+                    const scale = e.deltaY < 0 ? zoomFactor : 1 / zoomFactor;
+                    ctx.scale(scale, scale);
+                    draw();
+                });
+
+                draw();
+            })
+            .catch(error => {
+                console.error("Error loading text file:", error);
+            });
+    </script>
+</body>
+</html>
