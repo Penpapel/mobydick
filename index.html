@@ -32,7 +32,7 @@
         ctx.fillStyle = "black";
 
         // Load text file
-        fetch('mb.txt')
+        fetch('./mb.txt')
             .then(response => response.text())
             .then(text => {
                 // Text analysis
